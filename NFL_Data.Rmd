@@ -15,8 +15,9 @@ library(ggplot2)
 library(nflplotR)
 library(gt)
 library(nflreadr)
+```
 
-# Set working directory and load data
+```{r}
 setwd("C:/UT Austin 2024/NFLBigData/nfl-big-data-bowl-2025")
 games <- read_csv("games.csv")
 player_plays <- read_csv("player_play.csv")
@@ -24,14 +25,7 @@ players <- read_csv("players.csv")
 plays <- read_csv("plays.csv")
 ```
 
-# Introduction
-
-## The NFL Big Data Bowl 2025 focuses on pre-snap to post-snap predictions. With 40 seconds between plays, teams make crucial decisions involving personnel, formations, and strategic movements. This analysis aims to uncover patterns in pre-snap behavior that can predict post-snap actions.
-
-## Data Preparation
-
 ```{r}
-
 pla <- full_join(player_plays, plays, by = c("gameId", "playId"))
 
 snap <- tibble(
@@ -54,16 +48,14 @@ snap <- tibble(
   coverage = pla$pff_passCoverage,
   run = pla$pff_runConceptPrimary
 )
+```
 
+```{r}
 snap_unique <- snap %>% 
   distinct(desc, .keep_all = TRUE) %>%
   mutate(play_type = ifelse(is.na(passResult), "Rush", "Pass")) %>%
   filter(!is.na(formation) & formation != "NA")
-
 ```
-
-# Play Type Prediction
-## Play Type by Yards to Go and Formation
 
 ```{r}
 play_summary <- snap_unique %>%
@@ -83,18 +75,7 @@ ggplot(play_summary, aes(x = yardsToGo, y = percentage, fill = play_type)) +
         legend.title = element_blank())
 ```
 
-## This visualization reveals how play type (Rush vs Pass) varies based on yards to go and offensive formation. We can observe that:
-### As yards to go increases, the percentage of pass plays generally increases across all formations.
-### Some formations, like "SHOTGUN", have a higher percentage of pass plays regardless of yards to go.
-### Formations like "I_FORM" tend to have a higher percentage of rush plays, especially in short-yardage situations.
-### These insights can be valuable for defensive coordinators in predicting play types based on pre-snap formations and game situations.
-
-# Scheme Prediction
-
-## Coverage Types by Formation
-
 ```{r}
-
 coverage_data <- snap_unique %>%
   drop_na(formation, coverage) %>%
   group_by(formation, coverage) %>%
@@ -111,18 +92,7 @@ ggplot(coverage_data, aes(x = formation, y = percentage, fill = coverage)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-## This chart illustrates the distribution of defensive coverage types for each offensive formation. It can help predict likely defensive schemes based on the offensive setup.
-
-# Player Prediction
-
-## Yards Gained Distribution by Formation and Coverage
-
-```{r formation_coverage_yards, fig.width=15, fig.height=10}
-library(ggplot2)
-library(dplyr)
-library(forcats)
-
-# Prepare the data
+```{r}
 plot_data <- snap_unique %>%
   filter(!is.na(formation) & !is.na(coverage) & !is.na(yards)) %>%
   group_by(formation, coverage) %>%
@@ -131,9 +101,8 @@ plot_data <- snap_unique %>%
     n = n(),
     .groups = 'drop'
   ) %>%
-  filter(n > 10)  # Filter out combinations with few occurrences
+  filter(n > 10)
 
-# Create the plot
 ggplot(plot_data, aes(x = fct_reorder(formation, avg_yards), y = coverage, fill = avg_yards)) +
   geom_tile() +
   geom_text(aes(label = sprintf("%.1f", avg_yards)), color = "black", size = 3) +
@@ -152,10 +121,6 @@ ggplot(plot_data, aes(x = fct_reorder(formation, avg_yards), y = coverage, fill 
   )
 ```
 
-## This plot shows the distribution of yards gained for different formation-coverage pairings. It can help predict player performance and potential play outcomes based on pre-snap alignments.
-
-# Pre-snap Motion Analysis
-
 ```{r}
 motion_summary <- snap_unique %>%
   group_by(formation) %>%
@@ -172,14 +137,6 @@ motion_summary <- snap_unique %>%
 
 print(motion_summary)
 ```
-
-## This analysis shows the impact of pre-snap motion on play outcomes:
-### Pass plays with pre-snap motion gain more yards on average than those without motion.
-### Interestingly, rush plays without pre-snap motion seem to be slightly more effective.
-###The use of pre-snap motion is more common in pass plays than in rush plays.
-### These findings suggest that pre-snap motion can be a valuable tool for offenses, particularly in the passing game. Defenses should be especially alert to the possibility of a pass play when they observe pre-snap motion.
-
-# Formation Effectiveness
 
 ```{r}
 formation_summary <- snap_unique %>%
@@ -205,18 +162,3 @@ ggplot(formation_summary, aes(x = reorder(formation, avg_yards), y = avg_yards))
 
 print(formation_summary)
 ```
-
-## This chart provides insights into the effectiveness of different formations:
-### Formations like "EMPTY" and "SHOTGUN" tend to gain more yards on average.
-### These formations also have a higher percentage of pass plays (as indicated by the red percentages).
-### Some formations with lower average yards (e.g., "I_FORM") tend to have a lower percentage of pass plays.
-### This analysis can help offensive coordinators choose formations based on their desired play type and yardage goals, while also informing defensive strategies against specific formations.
-
-# Conclusion
-
-## This analysis reveals several key patterns in pre-snap behavior that can predict post-snap actions:
-### Play type tendencies vary significantly based on yards to go and formation.
-### Defensive coverage types show clear patterns in response to offensive formations.
-### The combination of offensive formation and defensive coverage can predict yardage outcomes.
-### Pre-snap motion has a measurable impact on play selection and effectiveness.
-### These insights can be valuable for both offensive and defensive strategy in the NFL, allowing teams to better anticipate and counter their opponents' actions.
